@@ -4,7 +4,12 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,36 +23,49 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MainActivity extends Activity implements OnWebServiceResult {
-    EditText input;
-    TextView output;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MainActivity extends Activity implements OnWebServiceResult, AdapterView.OnItemClickListener {
+
+    TextView textView;
+    AutoCompleteTextView autoCompleteTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        input = findViewById(R.id.input);
-        output = findViewById(R.id.output);
-        input.addTextChangedListener(watch);
+
+        autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
+        autoCompleteTextView.addTextChangedListener(watch);
+
+        textView = findViewById(R.id.textView);
     }
 
     @Override
     public void getWebResponse(String result, CommonUtilities.SERVICE_TYPE type) {
 
-        String text = "";
+        List<String> stations = new ArrayList<>();
         try{
             JSONObject obj= new JSONObject(result);
             JSONArray arr=obj.getJSONArray("stations");
             for(int i=0;i<arr.length();i++){
                 JSONObject jsonObject=arr.getJSONObject(i);
                 String station_name = jsonObject.getString("name");
-                text += "\n"+station_name+"\n";
+                stations.add(station_name);
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        output.setText(text);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, stations);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        autoCompleteTextView.setAdapter(dataAdapter);
+        autoCompleteTextView.setThreshold(1);
+
+        autoCompleteTextView.setOnItemClickListener(this);
     }
 
     public void hitrequest(CharSequence s) {
@@ -87,4 +105,10 @@ public class MainActivity extends Activity implements OnWebServiceResult {
             //output.setText(s);
         }
     };
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        String item = parent.getItemAtPosition(position).toString();
+        textView.setText(item);
+    }
 }
